@@ -50,6 +50,11 @@ android {
     buildFeatures {
         compose = true
     }
+    androidResources {
+        // El modelo TFLite debe quedar SIN comprimir en el APK para poder
+        // mapearlo en memoria (MappedByteBuffer) al cargar el Interpreter.
+        noCompress += "tflite"
+    }
 }
 
 dependencies {
@@ -104,4 +109,8 @@ dependencies {
 
     // Carga de imágenes (foto del reporte: base64 → ByteBuffer)
     implementation(libs.coil.compose)
+
+    // IA on-device (Fase 6): especie con ML Kit, embedding con TFLite.
+    implementation(libs.mlkit.image.labeling)
+    implementation(libs.tensorflow.lite)
 }

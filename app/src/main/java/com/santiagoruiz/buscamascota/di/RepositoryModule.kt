@@ -3,9 +3,11 @@ package com.santiagoruiz.buscamascota.di
 import com.santiagoruiz.buscamascota.data.auth.AuthRepositoryImpl
 import com.santiagoruiz.buscamascota.data.image.PhotoEncoderImpl
 import com.santiagoruiz.buscamascota.data.location.LocationRepositoryImpl
+import com.santiagoruiz.buscamascota.data.ml.PhotoAnalyzerImpl
 import com.santiagoruiz.buscamascota.data.report.ReportRepositoryImpl
 import com.santiagoruiz.buscamascota.domain.repository.AuthRepository
 import com.santiagoruiz.buscamascota.domain.repository.LocationRepository
+import com.santiagoruiz.buscamascota.domain.repository.PhotoAnalyzer
 import com.santiagoruiz.buscamascota.domain.repository.PhotoEncoder
 import com.santiagoruiz.buscamascota.domain.repository.ReportRepository
 import dagger.Binds
@@ -37,4 +39,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPhotoEncoder(impl: PhotoEncoderImpl): PhotoEncoder
+
+    @Binds
+    @Singleton
+    abstract fun bindPhotoAnalyzer(impl: PhotoAnalyzerImpl): PhotoAnalyzer
 }

@@ -48,6 +48,19 @@ class FirestoreReportDataSource @Inject constructor(
     suspend fun getById(id: String): ReportDto? =
         reports.document(id).get().await().toObject(ReportDto::class.java)
 
+    /**
+     * Lectura puntual de reportes con [status] y [type] dados (matching
+     * visual). Solo filtros de igualdad, sin `orderBy`: no requiere índice
+     * compuesto (Firestore usa los índices de campo automáticos).
+     */
+    suspend fun getByStatusAndType(status: String, type: String): List<ReportDto> =
+        reports
+            .whereEqualTo("status", status)
+            .whereEqualTo("type", type)
+            .get()
+            .await()
+            .toObjects(ReportDto::class.java)
+
     private companion object {
         const val COLLECTION = "reports"
     }

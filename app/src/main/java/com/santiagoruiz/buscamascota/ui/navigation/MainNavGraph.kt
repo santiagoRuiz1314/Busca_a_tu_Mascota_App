@@ -20,6 +20,7 @@ import com.santiagoruiz.buscamascota.ui.alerts.AlertsScreen
 import com.santiagoruiz.buscamascota.ui.detail.ReportDetailScreen
 import com.santiagoruiz.buscamascota.ui.feed.FeedScreen
 import com.santiagoruiz.buscamascota.ui.map.MapScreen
+import com.santiagoruiz.buscamascota.ui.matching.MatchesScreen
 import com.santiagoruiz.buscamascota.ui.profile.ProfileScreen
 import com.santiagoruiz.buscamascota.ui.report.CreateReportScreen
 import com.santiagoruiz.buscamascota.ui.search.SearchScreen
@@ -82,13 +83,23 @@ fun MainScreen(
             composable<FeedRoute> { FeedScreen(onOpenReport = openReport) }
             composable<MapRoute> { MapScreen(onOpenReport = openReport) }
             composable<AlertsRoute> { AlertsScreen(onOpenReport = openReport) }
-            composable<SearchRoute> { SearchScreen() }
+            composable<SearchRoute> {
+                SearchScreen(
+                    onOpenMatches = { id -> innerNav.navigate(MatchesRoute(id)) },
+                )
+            }
             composable<ProfileRoute> { ProfileScreen() }
             composable<CreateReportRoute> {
                 CreateReportScreen(onClose = { innerNav.popBackStack() })
             }
             composable<ReportDetailRoute> {
                 ReportDetailScreen(onBack = { innerNav.popBackStack() })
+            }
+            composable<MatchesRoute> {
+                MatchesScreen(
+                    onBack = { innerNav.popBackStack() },
+                    onOpenReport = openReport,
+                )
             }
         }
     }

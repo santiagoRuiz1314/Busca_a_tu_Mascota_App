@@ -61,4 +61,17 @@ class ReportRepositoryImpl @Inject constructor(
                 Result.failure(IllegalStateException(e.toReportErrorMessage(), e))
             }
         }
+
+    override suspend fun getOpenReportsByType(type: ReportType): Result<List<Report>> =
+        withContext(ioDispatcher) {
+            try {
+                val dtos = dataSource.getByStatusAndType(
+                    status = ReportStatus.OPEN.name,
+                    type = type.name,
+                )
+                Result.success(dtos.map(ReportMapper::toDomain))
+            } catch (e: Exception) {
+                Result.failure(IllegalStateException(e.toReportErrorMessage(), e))
+            }
+        }
 }

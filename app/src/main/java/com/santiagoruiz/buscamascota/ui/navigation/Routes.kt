@@ -50,3 +50,7 @@ object CreateReportRoute
 
 @Serializable
 data class ReportDetailRoute(val reportId: String)
+
+/** Coincidencias visuales de un reporte (avistamientos parecidos). */
+@Serializable
+data class MatchesRoute(val reportId: String)

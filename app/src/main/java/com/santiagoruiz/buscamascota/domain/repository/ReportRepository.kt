@@ -18,4 +18,11 @@ interface ReportRepository {
 
     /** Carga un reporte por id (pantalla de detalle). */
     suspend fun getReport(id: String): Result<Report>
+
+    /**
+     * Lectura puntual (no reactiva) de reportes activos de un [type], para
+     * el matching visual. Dos filtros de igualdad sin `orderBy`: Firestore
+     * la resuelve con índices de campo automáticos (sin índice compuesto).
+     */
+    suspend fun getOpenReportsByType(type: ReportType): Result<List<Report>>
 }

@@ -6,9 +6,12 @@ import com.santiagoruiz.buscamascota.domain.model.GeoPoint
 import com.santiagoruiz.buscamascota.domain.model.ReportType
 import com.santiagoruiz.buscamascota.domain.usecase.report.CreateReportInput
 import com.santiagoruiz.buscamascota.domain.usecase.report.CreateReportUseCase
+import com.santiagoruiz.buscamascota.domain.usecase.report.DetectSpeciesUseCase
 import com.santiagoruiz.buscamascota.domain.usecase.report.EncodeReportPhotoUseCase
+import com.santiagoruiz.buscamascota.domain.usecase.report.ExtractPhotoEmbeddingUseCase
 import com.santiagoruiz.buscamascota.domain.usecase.report.GetCurrentLocationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +23,8 @@ class CreateReportViewModel @Inject constructor(
     private val createReport: CreateReportUseCase,
     private val getCurrentLocation: GetCurrentLocationUseCase,
     private val encodePhoto: EncodeReportPhotoUseCase,
+    private val detectSpecies: DetectSpeciesUseCase,
+    private val extractEmbedding: ExtractPhotoEmbeddingUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CreateReportUiState>(CreateReportUiState.Idle)
@@ -36,11 +41,17 @@ class CreateReportViewModel @Inject constructor(
 
     private val _photoBase64 = MutableStateFlow<String?>(null)
 
+    private val _embedding = MutableStateFlow<FloatArray?>(null)
+
     private val _processingPhoto = MutableStateFlow(false)
     val processingPhoto: StateFlow<Boolean> = _processingPhoto.asStateFlow()
 
     private val _hasPhoto = MutableStateFlow(false)
     val hasPhoto: StateFlow<Boolean> = _hasPhoto.asStateFlow()
+
+    /** Especie sugerida por ML Kit a partir de la foto (la UI la prefija). */
+    private val _suggestedSpecies = MutableStateFlow<String?>(null)
+    val suggestedSpecies: StateFlow<String?> = _suggestedSpecies.asStateFlow()
 
     fun requestLocation() {
         if (_locating.value) return
@@ -69,8 +80,19 @@ class CreateReportViewModel @Inject constructor(
     fun onPhotoPicked(uriString: String) {
         viewModelScope.launch {
             _processingPhoto.value = true
-            _photoBase64.value = encodePhoto(uriString)
+            _suggestedSpecies.value = null
+            _embedding.value = null
+
+            // Compresión, especie (ML Kit) y embedding (TFLite) en paralelo:
+            // las tres leen la misma foto y no dependen entre sí.
+            val base64 = async { encodePhoto(uriString) }
+            val species = async { detectSpecies(uriString) }
+            val embedding = async { extractEmbedding(uriString) }
+
+            _photoBase64.value = base64.await()
             _hasPhoto.value = _photoBase64.value != null
+            _suggestedSpecies.value = species.await()
+            _embedding.value = embedding.await()
             _processingPhoto.value = false
         }
     }
@@ -96,6 +118,7 @@ class CreateReportViewModel @Inject constructor(
                     description = description,
                     photoBase64 = _photoBase64.value,
                     location = _location.value,
+                    embedding = _embedding.value,
                 ),
             )
             _uiState.value = result.fold(

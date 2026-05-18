@@ -19,6 +19,8 @@ data class CreateReportInput(
     val description: String,
     val photoBase64: String?,
     val location: GeoPoint?,
+    /** Embedding visual de la foto (Fase 6); se asocia solo a LOST/SIGHTING. */
+    val embedding: FloatArray? = null,
 )
 
 /**
@@ -58,7 +60,11 @@ class CreateReportUseCase @Inject constructor(
             description = input.description.trim(),
             location = location,
             photoBase64 = input.photoBase64,
-            embedding = null,
+            // El matching visual solo aplica a perdidos y avistamientos; en
+            // denuncias de maltrato no se persiste el embedding.
+            embedding = input.embedding?.takeIf {
+                input.type == ReportType.LOST || input.type == ReportType.SIGHTING
+            },
             createdAt = System.currentTimeMillis(),
         )
         return reportRepository.createReport(report)

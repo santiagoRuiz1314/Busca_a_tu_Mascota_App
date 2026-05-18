@@ -59,6 +59,7 @@ fun CreateReportScreen(
     val location by viewModel.location.collectAsState()
     val hasPhoto by viewModel.hasPhoto.collectAsState()
     val processingPhoto by viewModel.processingPhoto.collectAsState()
+    val suggestedSpecies by viewModel.suggestedSpecies.collectAsState()
 
     var type by rememberSaveable { mutableStateOf(ReportType.LOST) }
     var species by rememberSaveable { mutableStateOf("") }
@@ -70,6 +71,15 @@ fun CreateReportScreen(
 
     LaunchedEffect(uiState) {
         if (uiState is CreateReportUiState.Success) onClose()
+    }
+
+    // ML Kit sugiere la especie desde la foto; se prefija solo si el usuario
+    // aún no eligió, dejándole siempre la última palabra.
+    LaunchedEffect(suggestedSpecies) {
+        val suggestion = suggestedSpecies
+        if (suggestion != null && species.isBlank() && suggestion in speciesOptions) {
+            species = suggestion
+        }
     }
 
     val photoPicker = rememberLauncherForActivityResult(
@@ -195,6 +205,7 @@ fun CreateReportScreen(
                 )
             }
         }
+        suggestedSpecies?.let { StatusLine("Detectado automáticamente: $it") }
 
         // Datos del animal
         OutlinedTextField(

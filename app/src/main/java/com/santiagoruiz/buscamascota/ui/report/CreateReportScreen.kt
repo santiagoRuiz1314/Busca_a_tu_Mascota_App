@@ -45,6 +45,9 @@ private fun ReportType.label(): String = when (this) {
     ReportType.ABUSE -> "Abuso"
 }
 
+// Especie como opción fija (la autodetección con ML Kit llega en Fase 6).
+private val speciesOptions = listOf("Perro", "Gato", "Otro")
+
 @Composable
 fun CreateReportScreen(
     onClose: () -> Unit,
@@ -172,16 +175,28 @@ fun CreateReportScreen(
             StatusLine("Ubicación lista ✓")
         }
 
-        // Datos del animal
-        OutlinedTextField(
-            value = species,
-            onValueChange = { species = it; viewModel.clearError() },
-            label = { Text("Especie (perro, gato…)") },
-            singleLine = true,
+        // Especie
+        Text(
+            text = "Especie",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp),
-        )
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            speciesOptions.forEach { option ->
+                FilterChip(
+                    selected = species == option,
+                    onClick = { species = option; viewModel.clearError() },
+                    label = { Text(option) },
+                )
+            }
+        }
+
+        // Datos del animal
         OutlinedTextField(
             value = breed,
             onValueChange = { breed = it },

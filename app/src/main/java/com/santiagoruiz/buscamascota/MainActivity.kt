@@ -4,38 +4,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import com.santiagoruiz.buscamascota.ui.navigation.AppNavGraph
 import com.santiagoruiz.buscamascota.ui.theme.BuscaMascotaTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * Única Activity de la app (single-activity + Compose). Hospeda el grafo de
+ * navegación raíz. `@AndroidEntryPoint` habilita la inyección de Hilt en los
+ * ViewModels obtenidos dentro del árbol de Compose.
+ */
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             BuscaMascotaTheme {
+                AppNavGraph()
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    BuscaMascotaTheme {
-        Greeting("Android")
     }
 }

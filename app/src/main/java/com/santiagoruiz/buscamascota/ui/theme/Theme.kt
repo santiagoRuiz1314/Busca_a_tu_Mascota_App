@@ -1,58 +1,146 @@
 package com.santiagoruiz.buscamascota.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+/**
+ * Esquema de color Material 3 de marca. `dynamicColor` desactivado: la app
+ * debe ser fiel al mockup, no al wallpaper del dispositivo.
+ */
+private val LightColors = lightColorScheme(
+    primary = BrandPrimary,
+    onPrimary = OnBrand,
+    primaryContainer = SurfaceChip,
+    onPrimaryContainer = TextPrimary,
+    secondary = BrandSecondary,
+    onSecondary = OnBrand,
+    secondaryContainer = SurfaceSelected,
+    onSecondaryContainer = TextPrimary,
+    tertiary = AccentCta,
+    onTertiary = OnAccentCta,
+    tertiaryContainer = AccentCta,
+    onTertiaryContainer = OnAccentCta,
+    background = BackgroundDefault,
+    onBackground = TextPrimary,
+    surface = SurfaceDefault,
+    onSurface = TextPrimary,
+    surfaceVariant = BackgroundCool,
+    onSurfaceVariant = TextSecondary,
+    surfaceContainerLowest = SurfaceDefault,
+    surfaceContainerLow = BackgroundCoolLight,
+    surfaceContainer = BackgroundDefault,
+    surfaceContainerHigh = SurfaceSelected,
+    surfaceContainerHighest = SurfaceChip,
+    outline = BorderDefault,
+    outlineVariant = DividerNeutral,
+    error = StatusLost,
+    onError = OnBrand,
+    scrim = Color(0xFF000000),
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val DarkColors = darkColorScheme(
+    primary = BrandPrimaryDarkMode,
+    onPrimary = OnBrandDarkMode,
+    primaryContainer = BrandPrimaryDeep,
+    onPrimaryContainer = TextPrimaryDarkMode,
+    secondary = BrandSecondary,
+    onSecondary = OnBrand,
+    tertiary = AccentCta,
+    onTertiary = OnAccentCta,
+    background = BackgroundDarkMode,
+    onBackground = TextPrimaryDarkMode,
+    surface = SurfaceDarkMode,
+    onSurface = TextPrimaryDarkMode,
+    surfaceVariant = SurfaceVariantDarkMode,
+    onSurfaceVariant = OnSurfaceVariantDarkMode,
+    outline = OutlineDarkMode,
+    outlineVariant = SurfaceVariantDarkMode,
+    error = StatusLost,
+    onError = OnBrand,
 )
+
+/**
+ * Colores semánticos por uso que Material 3 no modela como rol propio
+ * (CTA amber, colores de estado de reporte, bordes/superficies de marca).
+ * Se consumen vía `MaterialTheme.appColors`.
+ */
+data class BuscaMascotaColors(
+    val primaryAction: Color,
+    val onPrimaryAction: Color,
+    val statusLost: Color,
+    val statusSighting: Color,
+    val statusAbuse: Color,
+    val statusResolved: Color,
+    val infoLink: Color,
+    val border: Color,
+    val divider: Color,
+    val iconInactive: Color,
+    val textSecondary: Color,
+    val textNeutral: Color,
+    val surfaceSelected: Color,
+    val surfaceChip: Color,
+    val backgroundCool: Color,
+    val backgroundCoolLight: Color,
+)
+
+private val LightAppColors = BuscaMascotaColors(
+    primaryAction = AccentCta,
+    onPrimaryAction = OnAccentCta,
+    statusLost = StatusLost,
+    statusSighting = InfoLink,
+    statusAbuse = StatusAbuse,
+    statusResolved = StatusResolved,
+    infoLink = InfoLink,
+    border = BorderDefault,
+    divider = DividerNeutral,
+    iconInactive = IconInactive,
+    textSecondary = TextSecondary,
+    textNeutral = TextNeutral,
+    surfaceSelected = SurfaceSelected,
+    surfaceChip = SurfaceChip,
+    backgroundCool = BackgroundCool,
+    backgroundCoolLight = BackgroundCoolLight,
+)
+
+private val DarkAppColors = LightAppColors.copy(
+    onPrimaryAction = OnAccentCta,
+    textSecondary = OnSurfaceVariantDarkMode,
+    border = OutlineDarkMode,
+    divider = SurfaceVariantDarkMode,
+    surfaceSelected = SurfaceVariantDarkMode,
+    surfaceChip = BrandPrimaryDeep,
+    backgroundCool = SurfaceDarkMode,
+    backgroundCoolLight = SurfaceDarkMode,
+)
+
+private val LocalBuscaMascotaColors = staticCompositionLocalOf { LightAppColors }
+
+/** Acceso a los colores semánticos extendidos: `MaterialTheme.appColors`. */
+val MaterialTheme.appColors: BuscaMascotaColors
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalBuscaMascotaColors.current
 
 @Composable
 fun BuscaMascotaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val colorScheme = if (darkTheme) DarkColors else LightColors
+    val appColors = if (darkTheme) DarkAppColors else LightAppColors
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    CompositionLocalProvider(LocalBuscaMascotaColors provides appColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content,
+        )
     }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
 }

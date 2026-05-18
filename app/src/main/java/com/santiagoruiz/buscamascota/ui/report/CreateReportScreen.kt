@@ -55,6 +55,7 @@ fun CreateReportScreen(
     val uiState by viewModel.uiState.collectAsState()
     val location by viewModel.location.collectAsState()
     val locating by viewModel.locating.collectAsState()
+    val locationError by viewModel.locationError.collectAsState()
     val hasPhoto by viewModel.hasPhoto.collectAsState()
     val processingPhoto by viewModel.processingPhoto.collectAsState()
 
@@ -155,6 +156,14 @@ fun CreateReportScreen(
             locating -> StatusLine("Obteniendo ubicación…")
             location != null -> StatusLine(
                 "Ubicación: %.5f, %.5f".format(location!!.latitude, location!!.longitude),
+            )
+            locationError != null -> Text(
+                text = locationError!!,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
             )
         }
 

@@ -31,6 +31,9 @@ class CreateReportViewModel @Inject constructor(
     private val _locating = MutableStateFlow(false)
     val locating: StateFlow<Boolean> = _locating.asStateFlow()
 
+    private val _locationError = MutableStateFlow<String?>(null)
+    val locationError: StateFlow<String?> = _locationError.asStateFlow()
+
     private val _photoBase64 = MutableStateFlow<String?>(null)
 
     private val _processingPhoto = MutableStateFlow(false)
@@ -43,7 +46,16 @@ class CreateReportViewModel @Inject constructor(
         if (_locating.value) return
         viewModelScope.launch {
             _locating.value = true
-            _location.value = getCurrentLocation()
+            _locationError.value = null
+            val result = getCurrentLocation()
+            _location.value = result
+            _locationError.value = if (result == null) {
+                "No se pudo obtener tu ubicación. Activa la ubicación del " +
+                    "dispositivo (en el emulador: Extended Controls › Location) " +
+                    "e inténtalo de nuevo."
+            } else {
+                null
+            }
             _locating.value = false
         }
     }

@@ -44,3 +44,6 @@ object ProfileRoute
 // --- Destinos apilados sobre el grafo principal ---
 @Serializable
 object CreateReportRoute
+
+@Serializable
+data class ReportDetailRoute(val reportId: String)

@@ -86,4 +86,7 @@ dependencies {
 
     // Interop corrutinas <-> Tasks de Play Services (Task.await())
     implementation(libs.kotlinx.coroutines.play.services)
+
+    // Carga de imágenes (foto del reporte: base64 → ByteBuffer)
+    implementation(libs.coil.compose)
 }

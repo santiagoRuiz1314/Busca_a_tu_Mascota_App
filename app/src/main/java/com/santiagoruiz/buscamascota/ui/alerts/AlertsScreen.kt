@@ -1,15 +1,25 @@
 package com.santiagoruiz.buscamascota.ui.alerts
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import com.santiagoruiz.buscamascota.ui.common.PlaceholderScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.santiagoruiz.buscamascota.ui.common.components.ReportListSection
 
-/** Lista de alertas. Placeholder de la Fase 1; UI real en la Fase 4. */
+/** Alertas: animales perdidos y casos de maltrato activos. */
 @Composable
-fun AlertsScreen(modifier: Modifier = Modifier) {
-    PlaceholderScreen(
+fun AlertsScreen(
+    onOpenReport: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: AlertsViewModel = hiltViewModel(),
+) {
+    val state by viewModel.uiState.collectAsState()
+    ReportListSection(
         title = "Alertas",
-        subtitle = "Aquí aparecerán las alertas y reportes recientes.",
+        state = state,
+        emptyMessage = "No hay alertas activas por ahora.",
+        onOpenReport = onOpenReport,
         modifier = modifier,
     )
 }

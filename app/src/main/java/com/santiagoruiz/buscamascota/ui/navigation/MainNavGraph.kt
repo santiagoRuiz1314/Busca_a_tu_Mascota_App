@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.santiagoruiz.buscamascota.ui.alerts.AlertsScreen
+import com.santiagoruiz.buscamascota.ui.detail.ReportDetailScreen
 import com.santiagoruiz.buscamascota.ui.feed.FeedScreen
 import com.santiagoruiz.buscamascota.ui.profile.ProfileScreen
 import com.santiagoruiz.buscamascota.ui.report.CreateReportScreen
@@ -74,12 +75,18 @@ fun MainScreen(
             startDestination = FeedRoute,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable<FeedRoute> { FeedScreen() }
-            composable<AlertsRoute> { AlertsScreen() }
+            val openReport: (String) -> Unit = { id ->
+                innerNav.navigate(ReportDetailRoute(id))
+            }
+            composable<FeedRoute> { FeedScreen(onOpenReport = openReport) }
+            composable<AlertsRoute> { AlertsScreen(onOpenReport = openReport) }
             composable<SearchRoute> { SearchScreen() }
             composable<ProfileRoute> { ProfileScreen() }
             composable<CreateReportRoute> {
                 CreateReportScreen(onClose = { innerNav.popBackStack() })
+            }
+            composable<ReportDetailRoute> {
+                ReportDetailScreen(onBack = { innerNav.popBackStack() })
             }
         }
     }

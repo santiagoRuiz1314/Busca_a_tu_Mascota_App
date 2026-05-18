@@ -30,9 +30,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
@@ -96,15 +98,50 @@ fun MapScreen(
         position = CameraPosition.fromLatLngZoom(DEFAULT_CENTER, 12f)
     }
 
-    // Precentrar en el usuario la primera vez que llega su ubicación.
-    LaunchedEffect(userLocation) {
-        userLocation?.let {
-            cameraPositionState.position =
-                CameraPosition.fromLatLngZoom(LatLng(it.latitude, it.longitude), 14f)
+    val reports = (state as? ReportListUiState.Success)?.reports.orEmpty()
+
+    // La cámara enmarca el CONTENIDO (los reportes), no el dispositivo: en el
+    // emulador el GPS de prueba (p. ej. Googleplex) secuestraba la vista y los
+    // marcadores quedaban fuera de pantalla. Se encuadra una sola vez para no
+    // pelear con los gestos; la ubicación propia sigue en el botón "mi
+    // ubicación". Sin reportes, como ayuda, se centra en el usuario.
+    var cameraFramed by remember { mutableStateOf(false) }
+    LaunchedEffect(reports, userLocation) {
+        if (cameraFramed) return@LaunchedEffect
+        val loc = userLocation
+        when {
+            reports.size == 1 -> {
+                val p = reports.first().location
+                cameraPositionState.position =
+                    CameraPosition.fromLatLngZoom(LatLng(p.latitude, p.longitude), 15f)
+                cameraFramed = true
+            }
+
+            reports.size > 1 -> {
+                val builder = LatLngBounds.builder()
+                reports.forEach {
+                    builder.include(LatLng(it.location.latitude, it.location.longitude))
+                }
+                val bounds = builder.build()
+                try {
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngBounds(bounds, 140),
+                    )
+                } catch (e: IllegalStateException) {
+                    // El mapa aún no tiene tamaño: centra en el centro del bbox.
+                    cameraPositionState.position =
+                        CameraPosition.fromLatLngZoom(bounds.center, 12f)
+                }
+                cameraFramed = true
+            }
+
+            loc != null -> {
+                cameraPositionState.position =
+                    CameraPosition.fromLatLngZoom(LatLng(loc.latitude, loc.longitude), 13f)
+                cameraFramed = true
+            }
         }
     }
-
-    val reports = (state as? ReportListUiState.Success)?.reports.orEmpty()
 
     Box(modifier = modifier.fillMaxSize()) {
         GoogleMap(

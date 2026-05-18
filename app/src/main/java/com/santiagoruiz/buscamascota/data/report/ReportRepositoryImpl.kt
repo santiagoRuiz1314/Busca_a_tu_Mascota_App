@@ -1,6 +1,5 @@
 package com.santiagoruiz.buscamascota.data.report
 
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.santiagoruiz.buscamascota.data.report.mapper.ReportMapper
 import com.santiagoruiz.buscamascota.di.IoDispatcher
 import com.santiagoruiz.buscamascota.domain.model.Report
@@ -9,6 +8,7 @@ import com.santiagoruiz.buscamascota.domain.model.ReportType
 import com.santiagoruiz.buscamascota.domain.repository.ReportRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -18,7 +18,8 @@ import javax.inject.Inject
  * Implementación de [ReportRepository] sobre Firestore. El geohash se
  * calcula en el mapper a partir de la ubicación. Las alertas filtran por
  * tipo en cliente sobre el mismo flujo del feed para no exigir un segundo
- * índice compuesto (plan Spark).
+ * índice compuesto (plan Spark). Los errores se traducen a español vía
+ * [toReportErrorMessage] para no ocultar la causa real (reglas / índice).
  */
 class ReportRepositoryImpl @Inject constructor(
     private val dataSource: FirestoreReportDataSource,
@@ -31,7 +32,7 @@ class ReportRepositoryImpl @Inject constructor(
                 val id = dataSource.create(ReportMapper.toDto(report))
                 Result.success(id)
             } catch (e: Exception) {
-                Result.failure(IllegalStateException(e.toSpanishMessage(), e))
+                Result.failure(IllegalStateException(e.toReportErrorMessage(), e))
             }
         }
 
@@ -39,6 +40,7 @@ class ReportRepositoryImpl @Inject constructor(
         dataSource.observeByStatus(ReportStatus.OPEN.name)
             .map { dtos -> dtos.map(ReportMapper::toDomain) }
             .flowOn(ioDispatcher)
+            .catch { throw IllegalStateException(it.toReportErrorMessage(), it) }
 
     override fun observeOpenReportsByTypes(types: List<ReportType>): Flow<List<Report>> {
         val wanted = types.toSet()
@@ -56,33 +58,7 @@ class ReportRepositoryImpl @Inject constructor(
                     )
                 Result.success(ReportMapper.toDomain(dto))
             } catch (e: Exception) {
-                Result.failure(IllegalStateException(e.toSpanishMessage(), e))
+                Result.failure(IllegalStateException(e.toReportErrorMessage(), e))
             }
-        }
-
-    /**
-     * Traduce las excepciones de Firestore a mensajes en español listos para
-     * mostrar. PERMISSION_DENIED es lo más común al primer uso si la base se
-     * creó en modo producción (reglas que deniegan todo): antes se reportaba
-     * como "revisa tu conexión", lo cual confundía.
-     */
-    private fun Exception.toSpanishMessage(): String =
-        if (this is FirebaseFirestoreException) when (code) {
-            FirebaseFirestoreException.Code.PERMISSION_DENIED ->
-                "No tienes permiso para esta acción. Hay que publicar las " +
-                    "reglas de seguridad de Firestore (ver firestore.rules)."
-            FirebaseFirestoreException.Code.UNAVAILABLE ->
-                "Sin conexión con el servidor. Revisa tu internet e intenta de nuevo."
-            FirebaseFirestoreException.Code.UNAUTHENTICATED ->
-                "Tu sesión expiró. Vuelve a iniciar sesión."
-            FirebaseFirestoreException.Code.RESOURCE_EXHAUSTED ->
-                "Se alcanzó un límite del plan gratuito. Intenta más tarde."
-            FirebaseFirestoreException.Code.INVALID_ARGUMENT ->
-                "Los datos del reporte no son válidos (¿la foto es muy pesada?)."
-            FirebaseFirestoreException.Code.NOT_FOUND ->
-                "El reporte ya no está disponible."
-            else -> "No se pudo completar la operación. Intenta de nuevo."
-        } else {
-            "No se pudo completar la operación. Revisa tu conexión."
         }
 }

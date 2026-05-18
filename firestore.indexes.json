@@ -1,0 +1,14 @@
+{
+  "//": "Índices compuestos de Firestore para BuscaMascota. El feed/alertas consulta reports where status==OPEN order by createdAt DESC, que exige este índice. Crearlo con el enlace que imprime logcat (tag «Firestore») al primer fallo, o manualmente en Firebase Console → Firestore Database → Indexes → Composite → Add index (Collection ID: reports; Fields: status Ascending, createdAt Descending; Query scope: Collection).",
+  "indexes": [
+    {
+      "collectionGroup": "reports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

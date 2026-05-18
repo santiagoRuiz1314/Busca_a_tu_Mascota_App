@@ -23,7 +23,13 @@ class AlertsViewModel @Inject constructor(
             if (reports.isEmpty()) ReportListUiState.Empty
             else ReportListUiState.Success(reports)
         }
-        .catch { emit(ReportListUiState.Error("No se pudieron cargar las alertas.")) }
+        .catch {
+            emit(
+                ReportListUiState.Error(
+                    it.message ?: "No se pudieron cargar las alertas.",
+                ),
+            )
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

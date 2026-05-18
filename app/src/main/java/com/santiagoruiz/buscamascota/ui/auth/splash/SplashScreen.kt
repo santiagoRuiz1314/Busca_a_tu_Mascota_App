@@ -1,37 +1,54 @@
 package com.santiagoruiz.buscamascota.ui.auth.splash
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.delay
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 
 /**
- * Pantalla de arranque. En esta fase solo espera un instante y deriva al
- * flujo de autenticación. En la Fase 2 observará el estado de sesión real
- * para decidir entre el grafo de auth y el principal.
+ * Decide el destino inicial según el estado de sesión observado en Firebase.
  */
 @Composable
 fun SplashScreen(
-    onContinue: () -> Unit,
+    onAuthenticated: () -> Unit,
+    onUnauthenticated: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: SplashViewModel = hiltViewModel(),
 ) {
-    LaunchedEffect(Unit) {
-        delay(1200)
-        onContinue()
+    val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(state) {
+        when (state) {
+            SplashUiState.Authenticated -> onAuthenticated()
+            SplashUiState.Unauthenticated -> onUnauthenticated()
+            SplashUiState.Loading -> Unit
+        }
     }
-    Box(
+
+    Column(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             text = "BuscaMascota",
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.primary,
+        )
+        CircularProgressIndicator(
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 24.dp),
         )
     }
 }

@@ -27,11 +27,11 @@ import com.santiagoruiz.buscamascota.ui.search.SearchScreen
  * (4 pestañas) y FAB para crear reporte. Mantiene su propio [NavHost] interno
  * con preservación de estado por pestaña.
  *
- * `onSignOut` lo provee el grafo raíz para volver al flujo de autenticación.
+ * El cierre de sesión y la redirección al flujo de auth los maneja de forma
+ * reactiva el observador de sesión del grafo raíz.
  */
 @Composable
 fun MainScreen(
-    onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val innerNav = rememberNavController()
@@ -77,7 +77,7 @@ fun MainScreen(
             composable<FeedRoute> { FeedScreen() }
             composable<AlertsRoute> { AlertsScreen() }
             composable<SearchRoute> { SearchScreen() }
-            composable<ProfileRoute> { ProfileScreen(onSignOut = onSignOut) }
+            composable<ProfileRoute> { ProfileScreen() }
             composable<CreateReportRoute> {
                 CreateReportScreen(onClose = { innerNav.popBackStack() })
             }

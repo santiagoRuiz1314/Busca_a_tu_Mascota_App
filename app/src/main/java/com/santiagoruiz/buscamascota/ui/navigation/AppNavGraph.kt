@@ -1,23 +1,42 @@
 package com.santiagoruiz.buscamascota.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.santiagoruiz.buscamascota.ui.auth.splash.SplashScreen
+import com.santiagoruiz.buscamascota.ui.session.SessionViewModel
+import kotlinx.coroutines.flow.filterNotNull
 
 /**
- * Grafo de navegación raíz. Arranca en [SplashRoute] y deriva al subgrafo
- * de autenticación o al principal.
- *
- * En la Fase 1 la transición es fija (Splash → Auth). En la Fase 2 el splash
- * observará el estado de sesión real para enrutar a [MainGraphRoute] cuando
- * exista usuario autenticado.
+ * Grafo de navegación raíz. El splash decide el destino inicial según el
+ * estado de sesión observado en Firebase. Un observador de sesión a nivel
+ * raíz redirige de forma reactiva al flujo de auth cuando se cierra sesión
+ * (o expira) desde cualquier pantalla.
  */
 @Composable
 fun AppNavGraph(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
+    val sessionViewModel: SessionViewModel = hiltViewModel()
+
+    LaunchedEffect(Unit) {
+        var wasAuthenticated = false
+        sessionViewModel.isAuthenticated.filterNotNull().collect { authenticated ->
+            if (wasAuthenticated && !authenticated) {
+                navController.navigate(AuthGraphRoute) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+            wasAuthenticated = authenticated
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -26,7 +45,12 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
     ) {
         composable<SplashRoute> {
             SplashScreen(
-                onContinue = {
+                onAuthenticated = {
+                    navController.navigate(MainGraphRoute) {
+                        popUpTo(SplashRoute) { inclusive = true }
+                    }
+                },
+                onUnauthenticated = {
                     navController.navigate(AuthGraphRoute) {
                         popUpTo(SplashRoute) { inclusive = true }
                     }
@@ -37,13 +61,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
         authGraph(navController)
 
         composable<MainGraphRoute> {
-            MainScreen(
-                onSignOut = {
-                    navController.navigate(AuthGraphRoute) {
-                        popUpTo(MainGraphRoute) { inclusive = true }
-                    }
-                },
-            )
+            MainScreen()
         }
     }
 }

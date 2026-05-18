@@ -10,4 +10,9 @@ class LocationRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentLocation(): GeoPoint? =
         runCatching { dataSource.getCurrentLocation() }.getOrNull()
+
+    override suspend fun describeLocation(point: GeoPoint): String? =
+        runCatching {
+            dataSource.reverseGeocode(point.latitude, point.longitude)
+        }.getOrNull()
 }

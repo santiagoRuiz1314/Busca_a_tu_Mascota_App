@@ -9,6 +9,7 @@ import com.santiagoruiz.buscamascota.domain.repository.ReportRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -39,6 +40,11 @@ class ReportRepositoryImpl @Inject constructor(
     override fun observeOpenReports(): Flow<List<Report>> =
         dataSource.observeByStatus(ReportStatus.OPEN.name)
             .map { dtos -> dtos.map(ReportMapper::toDomain) }
+            // El snapshot listener emite varias veces la misma lista (caché
+            // y luego servidor, cambios de metadata). Colapsar emisiones
+            // idénticas evita reconstruir marcadores del mapa / recomponer
+            // el feed sin que nada haya cambiado realmente.
+            .distinctUntilChanged()
             .flowOn(ioDispatcher)
             .catch { throw IllegalStateException(it.toReportErrorMessage(), it) }
 

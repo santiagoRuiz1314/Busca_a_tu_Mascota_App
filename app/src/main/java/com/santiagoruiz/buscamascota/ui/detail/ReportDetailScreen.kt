@@ -37,6 +37,7 @@ fun ReportDetailScreen(
     viewModel: ReportDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
+    val address by viewModel.address.collectAsState()
 
     Column(modifier = modifier.fillMaxSize()) {
         TextButton(
@@ -68,13 +69,13 @@ fun ReportDetailScreen(
                 }
             }
 
-            is ReportDetailUiState.Success -> ReportDetailContent(s.report)
+            is ReportDetailUiState.Success -> ReportDetailContent(s.report, address)
         }
     }
 }
 
 @Composable
-private fun ReportDetailContent(report: Report) {
+private fun ReportDetailContent(report: Report, address: String?) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -133,8 +134,12 @@ private fun ReportDetailContent(report: Report) {
             }
 
             DetailSection("Ubicación") {
+                // Lugar legible (ciudad, país). Las coordenadas solo se
+                // muestran como respaldo si el geocoder no resolvió aún o
+                // falló (p. ej. sin conexión): el usuario nunca queda sin
+                // dato, pero ve un nombre en cuanto está disponible.
                 Text(
-                    text = "%.5f, %.5f".format(
+                    text = address ?: "%.5f, %.5f".format(
                         report.location.latitude,
                         report.location.longitude,
                     ),

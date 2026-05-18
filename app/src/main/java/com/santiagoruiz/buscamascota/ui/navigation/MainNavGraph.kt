@@ -88,7 +88,7 @@ fun MainScreen(
                     onOpenMatches = { id -> innerNav.navigate(MatchesRoute(id)) },
                 )
             }
-            composable<ProfileRoute> { ProfileScreen() }
+            composable<ProfileRoute> { ProfileScreen(onOpenReport = openReport) }
             composable<CreateReportRoute> {
                 CreateReportScreen(onClose = { innerNav.popBackStack() })
             }

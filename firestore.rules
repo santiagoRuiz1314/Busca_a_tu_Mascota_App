@@ -2,10 +2,10 @@ rules_version = '2';
 
 // Reglas de seguridad de Cloud Firestore para BuscaMascota.
 //
-// La base se creó en modo producción (deniega todo por defecto), por eso el
-// primer reporte fallaba con PERMISSION_DENIED. Estas reglas habilitan el
-// uso real con autenticación. Ya reflejan la intención de la Fase 7
-// (lectura autenticada; escritura solo por el dueño / propio uid).
+// La base se creó en modo producción (deniega todo por defecto). Estas
+// reglas son las definitivas de la Fase 7 (perfil + endurecer seguridad):
+// lectura solo autenticada; escritura solo por el dueño / propio uid; no se
+// puede reasignar la propiedad de un reporte ni borrar perfiles.
 //
 // CÓMO PUBLICARLAS: Firebase Console → proyecto buscamascota-a15a6 →
 // Build → Firestore Database → pestaña "Rules" → pegar este contenido →
@@ -15,19 +15,29 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Reportes: cualquier usuario autenticado puede leerlos; solo el dueño
-    // puede crear (con su propio uid) y modificar/borrar los suyos.
+    // puede crear (con su propio uid), modificar y borrar los suyos. En las
+    // actualizaciones no se permite reasignar el dueño (ownerId inmutable).
     match /reports/{reportId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
                     && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null
-                            && resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null
+                    && resource.data.ownerId == request.auth.uid
+                    && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if request.auth != null
+                    && resource.data.ownerId == request.auth.uid;
     }
 
-    // Perfil de usuario: lectura autenticada; cada quien escribe solo el suyo.
+    // Perfil de usuario (users/{uid}): lectura autenticada; cada quien crea
+    // y edita únicamente el documento cuyo id es su propio uid. El perfil no
+    // se borra desde la app (se conserva la autoría histórica de los
+    // reportes). No se valida el campo `uid` del documento porque es
+    // @DocumentId: Firestore lo deriva de la ruta y NO lo escribe en data.
     match /users/{uid} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false;
     }
   }
 }

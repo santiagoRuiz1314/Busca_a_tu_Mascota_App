@@ -46,7 +46,8 @@ import com.santiagoruiz.buscamascota.ui.common.ReportListUiState
 import com.santiagoruiz.buscamascota.ui.common.format.displayName
 import com.santiagoruiz.buscamascota.ui.common.format.relativeTime
 
-// Centro por defecto: Bucaramanga (UNAB), si aún no hay ubicación del usuario.
+// Centro por defecto: Bucaramanga (UNAB). La cámara solo se mueve de aquí
+// para encuadrar reportes reales (ver más abajo).
 private val DEFAULT_CENTER = LatLng(7.1193, -73.1227)
 
 /** Color del marcador por tipo de reporte (coherente con [ReportTypeBadge]). */
@@ -59,9 +60,9 @@ private fun ReportType.markerHue(): Float = when (this) {
 /**
  * Mapa del feed: los reportes activos como marcadores geolocalizados. Al
  * tocar un marcador se abre su ventana de información; al tocar la ventana
- * se navega al detalle. Si se concede el permiso de ubicación se muestra el
- * punto azul y la cámara se precentra en el usuario; sin permiso, el mapa
- * arranca en Bucaramanga y el usuario puede moverlo libremente.
+ * se navega al detalle. Con permiso de ubicación se muestra el punto azul
+ * y el botón "mi ubicación" para centrarse uno mismo manualmente; la cámara
+ * nunca se centra automáticamente en el GPS (en emulador es de prueba).
  */
 @Composable
 fun MapScreen(
@@ -71,7 +72,6 @@ fun MapScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
-    val userLocation by viewModel.userLocation.collectAsState()
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -84,14 +84,12 @@ fun MapScreen(
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        hasLocationPermission = granted
-        if (granted) viewModel.requestUserLocation()
-    }
+    ) { granted -> hasLocationPermission = granted }
 
     LaunchedEffect(Unit) {
-        if (hasLocationPermission) viewModel.requestUserLocation()
-        else permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (!hasLocationPermission) {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
     }
 
     val cameraPositionState = rememberCameraPositionState {
@@ -100,47 +98,34 @@ fun MapScreen(
 
     val reports = (state as? ReportListUiState.Success)?.reports.orEmpty()
 
-    // La cámara enmarca el CONTENIDO (los reportes), no el dispositivo: en el
-    // emulador el GPS de prueba (p. ej. Googleplex) secuestraba la vista y los
-    // marcadores quedaban fuera de pantalla. Se encuadra una sola vez para no
-    // pelear con los gestos; la ubicación propia sigue en el botón "mi
-    // ubicación". Sin reportes, como ayuda, se centra en el usuario.
-    var cameraFramed by remember { mutableStateOf(false) }
-    LaunchedEffect(reports, userLocation) {
-        if (cameraFramed) return@LaunchedEffect
-        val loc = userLocation
-        when {
-            reports.size == 1 -> {
-                val p = reports.first().location
-                cameraPositionState.position =
-                    CameraPosition.fromLatLngZoom(LatLng(p.latitude, p.longitude), 15f)
-                cameraFramed = true
+    // La cámara solo se mueve para encuadrar reportes reales, y una sola
+    // vez. Mientras el feed carga (Loading) o está vacío (Empty) se queda en
+    // Bucaramanga: nunca salta a un "sitio raro". El guard evita reencuadrar
+    // (y pelear con los gestos del usuario) en refrescos del listener.
+    var reportsFramed by remember { mutableStateOf(false) }
+    LaunchedEffect(reports) {
+        if (reportsFramed || reports.isEmpty()) return@LaunchedEffect
+        if (reports.size == 1) {
+            val p = reports.first().location
+            cameraPositionState.position =
+                CameraPosition.fromLatLngZoom(LatLng(p.latitude, p.longitude), 15f)
+        } else {
+            val builder = LatLngBounds.builder()
+            reports.forEach {
+                builder.include(LatLng(it.location.latitude, it.location.longitude))
             }
-
-            reports.size > 1 -> {
-                val builder = LatLngBounds.builder()
-                reports.forEach {
-                    builder.include(LatLng(it.location.latitude, it.location.longitude))
-                }
-                val bounds = builder.build()
-                try {
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngBounds(bounds, 140),
-                    )
-                } catch (e: IllegalStateException) {
-                    // El mapa aún no tiene tamaño: centra en el centro del bbox.
-                    cameraPositionState.position =
-                        CameraPosition.fromLatLngZoom(bounds.center, 12f)
-                }
-                cameraFramed = true
-            }
-
-            loc != null -> {
+            val bounds = builder.build()
+            try {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngBounds(bounds, 140),
+                )
+            } catch (e: IllegalStateException) {
+                // El mapa aún no tiene tamaño: centra en el centro del bbox.
                 cameraPositionState.position =
-                    CameraPosition.fromLatLngZoom(LatLng(loc.latitude, loc.longitude), 13f)
-                cameraFramed = true
+                    CameraPosition.fromLatLngZoom(bounds.center, 12f)
             }
         }
+        reportsFramed = true
     }
 
     Box(modifier = modifier.fillMaxSize()) {

@@ -33,6 +33,9 @@ object SignUpRoute
 object FeedRoute
 
 @Serializable
+object MapRoute
+
+@Serializable
 object AlertsRoute
 
 @Serializable

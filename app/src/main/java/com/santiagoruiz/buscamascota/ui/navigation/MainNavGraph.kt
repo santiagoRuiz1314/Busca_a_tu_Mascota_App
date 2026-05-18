@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import com.santiagoruiz.buscamascota.ui.alerts.AlertsScreen
 import com.santiagoruiz.buscamascota.ui.detail.ReportDetailScreen
 import com.santiagoruiz.buscamascota.ui.feed.FeedScreen
+import com.santiagoruiz.buscamascota.ui.map.MapScreen
 import com.santiagoruiz.buscamascota.ui.profile.ProfileScreen
 import com.santiagoruiz.buscamascota.ui.report.CreateReportScreen
 import com.santiagoruiz.buscamascota.ui.search.SearchScreen
@@ -79,6 +80,7 @@ fun MainScreen(
                 innerNav.navigate(ReportDetailRoute(id))
             }
             composable<FeedRoute> { FeedScreen(onOpenReport = openReport) }
+            composable<MapRoute> { MapScreen(onOpenReport = openReport) }
             composable<AlertsRoute> { AlertsScreen(onOpenReport = openReport) }
             composable<SearchRoute> { SearchScreen() }
             composable<ProfileRoute> { ProfileScreen() }

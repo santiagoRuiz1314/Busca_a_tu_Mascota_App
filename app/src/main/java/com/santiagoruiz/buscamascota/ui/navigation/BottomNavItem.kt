@@ -12,6 +12,7 @@ enum class BottomNavItem(
     val glyph: String,
 ) {
     FEED(FeedRoute, "Inicio", "🏠"),
+    MAP(MapRoute, "Mapa", "🗺️"),
     ALERTS(AlertsRoute, "Alertas", "🔔"),
     SEARCH(SearchRoute, "Buscar", "🔍"),
     PROFILE(ProfileRoute, "Perfil", "👤"),

@@ -60,6 +60,12 @@ class CreateReportViewModel @Inject constructor(
         }
     }
 
+    /** Ubicación elegida por el usuario en el mapa (selección manual). */
+    fun setLocation(latitude: Double, longitude: Double) {
+        _location.value = GeoPoint(latitude, longitude)
+        _locationError.value = null
+    }
+
     fun onPhotoPicked(uriString: String) {
         viewModelScope.launch {
             _processingPhoto.value = true

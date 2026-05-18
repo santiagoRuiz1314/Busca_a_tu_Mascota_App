@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -6,6 +8,13 @@ plugins {
     alias(libs.plugins.hilt)
     id("com.google.gms.google-services")
 }
+
+// Clave de Google Maps fuera del control de versiones (local.properties está
+// en .gitignore). Se inyecta en el manifest vía manifestPlaceholders.
+val mapsApiKey: String = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}.getProperty("MAPS_API_KEY", "")
 
 android {
     namespace = "com.santiagoruiz.buscamascota"
@@ -21,6 +30,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
@@ -83,6 +94,10 @@ dependencies {
 
     // Ubicación
     implementation(libs.play.services.location)
+
+    // Mapa (selector de ubicación del reporte)
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
 
     // Interop corrutinas <-> Tasks de Play Services (Task.await())
     implementation(libs.kotlinx.coroutines.play.services)

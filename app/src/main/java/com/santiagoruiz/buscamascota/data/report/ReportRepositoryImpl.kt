@@ -1,5 +1,6 @@
 package com.santiagoruiz.buscamascota.data.report
 
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.santiagoruiz.buscamascota.data.report.mapper.ReportMapper
 import com.santiagoruiz.buscamascota.di.IoDispatcher
 import com.santiagoruiz.buscamascota.domain.model.Report
@@ -30,12 +31,7 @@ class ReportRepositoryImpl @Inject constructor(
                 val id = dataSource.create(ReportMapper.toDto(report))
                 Result.success(id)
             } catch (e: Exception) {
-                Result.failure(
-                    IllegalStateException(
-                        "No se pudo guardar el reporte. Revisa tu conexión.",
-                        e,
-                    ),
-                )
+                Result.failure(IllegalStateException(e.toSpanishMessage(), e))
             }
         }
 
@@ -60,12 +56,33 @@ class ReportRepositoryImpl @Inject constructor(
                     )
                 Result.success(ReportMapper.toDomain(dto))
             } catch (e: Exception) {
-                Result.failure(
-                    IllegalStateException(
-                        "No se pudo cargar el reporte. Revisa tu conexión.",
-                        e,
-                    ),
-                )
+                Result.failure(IllegalStateException(e.toSpanishMessage(), e))
             }
+        }
+
+    /**
+     * Traduce las excepciones de Firestore a mensajes en español listos para
+     * mostrar. PERMISSION_DENIED es lo más común al primer uso si la base se
+     * creó en modo producción (reglas que deniegan todo): antes se reportaba
+     * como "revisa tu conexión", lo cual confundía.
+     */
+    private fun Exception.toSpanishMessage(): String =
+        if (this is FirebaseFirestoreException) when (code) {
+            FirebaseFirestoreException.Code.PERMISSION_DENIED ->
+                "No tienes permiso para esta acción. Hay que publicar las " +
+                    "reglas de seguridad de Firestore (ver firestore.rules)."
+            FirebaseFirestoreException.Code.UNAVAILABLE ->
+                "Sin conexión con el servidor. Revisa tu internet e intenta de nuevo."
+            FirebaseFirestoreException.Code.UNAUTHENTICATED ->
+                "Tu sesión expiró. Vuelve a iniciar sesión."
+            FirebaseFirestoreException.Code.RESOURCE_EXHAUSTED ->
+                "Se alcanzó un límite del plan gratuito. Intenta más tarde."
+            FirebaseFirestoreException.Code.INVALID_ARGUMENT ->
+                "Los datos del reporte no son válidos (¿la foto es muy pesada?)."
+            FirebaseFirestoreException.Code.NOT_FOUND ->
+                "El reporte ya no está disponible."
+            else -> "No se pudo completar la operación. Intenta de nuevo."
+        } else {
+            "No se pudo completar la operación. Revisa tu conexión."
         }
 }

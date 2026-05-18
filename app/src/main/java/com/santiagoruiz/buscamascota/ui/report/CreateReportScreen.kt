@@ -54,8 +54,6 @@ fun CreateReportScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val location by viewModel.location.collectAsState()
-    val locating by viewModel.locating.collectAsState()
-    val locationError by viewModel.locationError.collectAsState()
     val hasPhoto by viewModel.hasPhoto.collectAsState()
     val processingPhoto by viewModel.processingPhoto.collectAsState()
 
@@ -65,6 +63,7 @@ fun CreateReportScreen(
     var color by rememberSaveable { mutableStateOf("") }
     var animalName by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
+    var showPicker by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(uiState) {
         if (uiState is CreateReportUiState.Success) onClose()
@@ -85,6 +84,19 @@ fun CreateReportScreen(
         ) == PackageManager.PERMISSION_GRANTED
         if (granted) viewModel.requestLocation()
         else locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+    if (showPicker) {
+        LocationPicker(
+            initial = location,
+            onConfirm = { lat, lng ->
+                viewModel.setLocation(lat, lng)
+                showPicker = false
+            },
+            onCancel = { showPicker = false },
+            modifier = modifier,
+        )
+        return
     }
 
     val submitting = uiState is CreateReportUiState.Submitting
@@ -142,29 +154,22 @@ fun CreateReportScreen(
             hasPhoto -> StatusLine("Foto lista ✓")
         }
 
-        // Ubicación
+        // Ubicación: se elige en el mapa (con autodetección como ayuda
+        // para precentrar). No se muestran coordenadas crudas.
         OutlinedButton(
-            onClick = ::onRequestLocation,
-            enabled = !submitting && !locating,
+            onClick = {
+                onRequestLocation()
+                showPicker = true
+            },
+            enabled = !submitting,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp),
         ) {
-            Text("Usar mi ubicación")
+            Text(if (location != null) "Cambiar ubicación" else "Seleccionar ubicación")
         }
-        when {
-            locating -> StatusLine("Obteniendo ubicación…")
-            location != null -> StatusLine(
-                "Ubicación: %.5f, %.5f".format(location!!.latitude, location!!.longitude),
-            )
-            locationError != null -> Text(
-                text = locationError!!,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-            )
+        if (location != null) {
+            StatusLine("Ubicación lista ✓")
         }
 
         // Datos del animal

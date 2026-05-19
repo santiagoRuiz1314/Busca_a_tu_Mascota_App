@@ -4,16 +4,22 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -23,9 +29,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -43,8 +52,14 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
 import com.santiagoruiz.buscamascota.domain.model.ReportType
 import com.santiagoruiz.buscamascota.ui.common.ReportListUiState
+import com.santiagoruiz.buscamascota.ui.common.components.AppTopBar
+import com.santiagoruiz.buscamascota.ui.common.components.FilterChipsRow
+import com.santiagoruiz.buscamascota.ui.common.components.FilterOption
+import com.santiagoruiz.buscamascota.ui.common.components.comingSoon
 import com.santiagoruiz.buscamascota.ui.common.format.displayName
 import com.santiagoruiz.buscamascota.ui.common.format.relativeTime
+import com.santiagoruiz.buscamascota.ui.feed.FEED_FILTERS
+import com.santiagoruiz.buscamascota.ui.theme.appColors
 
 // Centro por defecto: Bucaramanga (UNAB). La cámara solo se mueve de aquí
 // para encuadrar reportes reales (ver más abajo).
@@ -98,6 +113,12 @@ fun MapScreen(
 
     val reports = (state as? ReportListUiState.Success)?.reports.orEmpty()
 
+    var selectedFilter by rememberSaveable { mutableStateOf("Todos") }
+    val activeType = FEED_FILTERS.firstOrNull { it.first == selectedFilter }?.second
+    val visibleReports = remember(reports, activeType) {
+        if (activeType == null) reports else reports.filter { it.type == activeType }
+    }
+
     // La cámara solo se mueve para encuadrar reportes reales, y una sola
     // vez. Mientras el feed carga (Loading) o está vacío (Empty) se queda en
     // Bucaramanga: nunca salta a un "sitio raro". El guard evita reencuadrar
@@ -138,7 +159,7 @@ fun MapScreen(
                 myLocationButtonEnabled = hasLocationPermission,
             ),
         ) {
-            reports.forEach { report ->
+            visibleReports.forEach { report ->
                 Marker(
                     state = rememberMarkerState(
                         key = report.id,
@@ -156,12 +177,83 @@ fun MapScreen(
             }
         }
 
+        // Cabecera + filtros flotantes sobre el mapa (el Scaffold ya aplica
+        // el inset de la status bar al contenido de las pestañas).
+        Column(
+            modifier = Modifier.align(Alignment.TopCenter),
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                shape = MaterialTheme.shapes.large,
+                shadowElevation = 4.dp,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            ) {
+                AppTopBar(title = "BuscaMascota") {
+                    IconButton(onClick = {}, modifier = Modifier.comingSoon()) {
+                        Icon(
+                            imageVector = Icons.Filled.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+            FilterChipsRow(
+                options = FEED_FILTERS.map { FilterOption(it.first) } +
+                    FilterOption("Enfermo", enabled = false),
+                selected = selectedFilter,
+                onSelected = { selectedFilter = it },
+            )
+        }
+
+        MapLegend(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(16.dp),
+        )
+
         StatusBanner(
             state = state,
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
+                .align(Alignment.Center)
                 .padding(16.dp),
+        )
+    }
+}
+
+@Composable
+private fun MapLegend(modifier: Modifier = Modifier) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = MaterialTheme.shapes.large,
+        shadowElevation = 4.dp,
+        modifier = modifier,
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            LegendItem("Perdidos", MaterialTheme.appColors.statusLost)
+            LegendItem("Encontrados", MaterialTheme.appColors.statusSighting)
+            LegendItem("Maltrato", MaterialTheme.appColors.statusAbuse)
+        }
+    }
+}
+
+@Composable
+private fun LegendItem(label: String, color: Color) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 3.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(color),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -184,7 +276,7 @@ private fun StatusBanner(
             shape = MaterialTheme.shapes.medium,
             tonalElevation = 3.dp,
             shadowElevation = 4.dp,
-            modifier = modifier.fillMaxWidth(),
+            modifier = modifier,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

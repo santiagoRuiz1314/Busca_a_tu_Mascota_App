@@ -78,6 +78,7 @@ data class BuscaMascotaColors(
     val statusSighting: Color,
     val statusAbuse: Color,
     val statusResolved: Color,
+    val statusSick: Color,
     val infoLink: Color,
     val border: Color,
     val divider: Color,
@@ -97,6 +98,7 @@ private val LightAppColors = BuscaMascotaColors(
     statusSighting = InfoLink,
     statusAbuse = StatusAbuse,
     statusResolved = StatusResolved,
+    statusSick = StatusSick,
     infoLink = InfoLink,
     border = BorderDefault,
     divider = DividerNeutral,
@@ -140,6 +142,7 @@ fun BuscaMascotaTheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,
+            shapes = Shapes,
             content = content,
         )
     }

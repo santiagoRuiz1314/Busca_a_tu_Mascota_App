@@ -19,9 +19,10 @@ import androidx.compose.ui.unit.dp
 import com.santiagoruiz.buscamascota.ui.common.ReportListUiState
 
 /**
- * Cuerpo reutilizable de una pantalla de lista de reportes: cabecera +
- * estado (cargando / vacío / error / lista). La navegación a detalle se
- * delega vía [onOpenReport] con el id del reporte.
+ * Cuerpo reutilizable de una lista de reportes: cabecera de sección
+ * opcional + estado (cargando / vacío / error / lista) con las tarjetas
+ * del nuevo sistema de diseño. La navegación a detalle se delega vía
+ * [onOpenReport]. [compact] usa la tarjeta tipo lista (miniatura + ›).
  */
 @Composable
 fun ReportListSection(
@@ -30,34 +31,40 @@ fun ReportListSection(
     emptyMessage: String,
     onOpenReport: (String) -> Unit,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    showTitle: Boolean = true,
+    header: (@Composable () -> Unit)? = null,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 8.dp),
-        )
+        if (showTitle) {
+            SectionHeader(
+                title = title,
+                modifier = Modifier.padding(
+                    start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp,
+                ),
+            )
+        }
+        header?.invoke()
         when (state) {
             ReportListUiState.Loading -> CenteredBox {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
 
-            ReportListUiState.Empty -> CenteredBox {
-                CenteredMessage(emptyMessage)
-            }
+            ReportListUiState.Empty -> CenteredBox { CenteredMessage(emptyMessage) }
 
-            is ReportListUiState.Error -> CenteredBox {
-                CenteredMessage(state.message)
-            }
+            is ReportListUiState.Error -> CenteredBox { CenteredMessage(state.message) }
 
             is ReportListUiState.Success -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(state.reports, key = { it.id }) { report ->
-                    ReportCard(report = report, onClick = { onOpenReport(report.id) })
+                    if (compact) {
+                        ReportCardCompact(report, onClick = { onOpenReport(report.id) })
+                    } else {
+                        ReportCard(report, onClick = { onOpenReport(report.id) })
+                    }
                 }
             }
         }
@@ -80,7 +87,7 @@ private fun CenteredBox(content: @Composable () -> Unit) {
 private fun CenteredMessage(text: String) {
     Text(
         text = text,
-        style = MaterialTheme.typography.bodyMedium,
+        style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
     )

@@ -53,9 +53,27 @@ Los ViewModels exponen estado mediante `StateFlow`, con los estados de UI modela
 
 ## Diseño
 
-El diseño completo de la aplicación está en Figma. Hay un servidor **Figma MCP** conectado, por lo que los tokens de diseño (colores, tipografía, spacing) y la estructura de cada pantalla se leen directamente desde el archivo de Figma. La implementación debe ser visualmente fiel al diseño original.
+El diseño vigente de la aplicación es el proyecto **BuscaMascota** en **Stitch**
+(tema "Premium Indigo / Community Pet Rescue"). Los tokens de diseño (colores,
+tipografía, spacing, shapes) están mapeados de forma semántica por uso en
+`ui/theme/` (`Color.kt`, `Type.kt`, `Shape.kt`, `Theme.kt`) y los componentes
+reutilizables viven en `ui/common/components/`. La implementación debe ser
+visualmente fiel a las pantallas de Stitch.
 
-**Archivo de Figma:** <https://www.figma.com/design/Bhqp4QTKoT1Z3wefha7sor/Mockup-protitipo>
+**Proyecto de Stitch:** `BuscaMascota` (id `16591044928308875526`).
+
+Decisiones de alcance del rediseño (la lógica/ViewModels/dominio no cambian):
+- Las pantallas del diseño sin lógica (verificación de correo, guía de
+  vacunación, consejos de cuidado) se omiten.
+- Los controles del diseño sin backend (categoría "Enfermo", "Encontrado" sin
+  datos, stats "Ayudados"/"Puntos", Fecha/Hora, "Contactar", "Tengo
+  información", Google Sign-In, etc.) se muestran pero **deshabilitados**
+  (helper `Modifier.comingSoon()`).
+- "Nuevo Reporte" es un asistente de 2 pasos sobre el mismo `submit()`.
+
+Nota histórica: el mockup original estaba en Figma
+(<https://www.figma.com/design/Bhqp4QTKoT1Z3wefha7sor/Mockup-protitipo>); quedó
+reemplazado por el diseño de Stitch.
 
 ## Enfoque de IA
 

@@ -46,6 +46,9 @@ object ProfileRoute
 
 // --- Destinos apilados sobre el grafo principal ---
 @Serializable
+object EditProfileRoute
+
+@Serializable
 object CreateReportRoute
 
 @Serializable

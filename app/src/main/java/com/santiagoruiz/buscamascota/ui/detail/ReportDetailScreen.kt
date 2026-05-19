@@ -1,5 +1,6 @@
 package com.santiagoruiz.buscamascota.ui.detail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,10 +9,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -20,12 +31,25 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.android.gms.maps.GoogleMapOptions
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.rememberMarkerState
 import com.santiagoruiz.buscamascota.domain.model.Report
+import com.santiagoruiz.buscamascota.ui.common.components.AppTopBar
 import com.santiagoruiz.buscamascota.ui.common.components.Base64Image
+import com.santiagoruiz.buscamascota.ui.common.components.PrimaryButton
 import com.santiagoruiz.buscamascota.ui.common.components.ReportTypeBadge
+import com.santiagoruiz.buscamascota.ui.common.components.SecondaryButton
+import com.santiagoruiz.buscamascota.ui.common.components.comingSoon
 import com.santiagoruiz.buscamascota.ui.common.format.displayName
 import com.santiagoruiz.buscamascota.ui.common.format.relativeTime
 import com.santiagoruiz.buscamascota.ui.theme.appColors
@@ -39,12 +63,19 @@ fun ReportDetailScreen(
     val state by viewModel.uiState.collectAsState()
     val address by viewModel.address.collectAsState()
 
-    Column(modifier = modifier.fillMaxSize()) {
-        TextButton(
-            onClick = onBack,
-            modifier = Modifier.padding(start = 8.dp, top = 8.dp),
-        ) {
-            Text("← Volver")
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        AppTopBar(title = "Rescate Animal", onBack = onBack) {
+            IconButton(onClick = {}, modifier = Modifier.comingSoon()) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
 
         when (val s = state) {
@@ -56,7 +87,7 @@ fun ReportDetailScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = s.message,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
@@ -81,106 +112,187 @@ private fun ReportDetailContent(report: Report, address: String?) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Base64Image(
-            base64 = report.photoBase64,
-            contentDescription = "Foto del reporte",
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-        )
+        Box {
+            Base64Image(
+                base64 = report.photoBase64,
+                contentDescription = "Foto del reporte",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+            )
+            ReportTypeBadge(
+                type = report.type,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp),
+            )
+        }
 
         Column(modifier = Modifier.padding(24.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ReportTypeBadge(report.type)
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = relativeTime(report.createdAt),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.appColors.textSecondary,
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                val title = report.animal.name?.takeIf { it.isNotBlank() }
+                    ?: report.animal.species.replaceFirstChar { it.uppercase() }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Text(
+                        text = listOfNotNull(
+                            report.animal.species,
+                            report.animal.breed,
+                        ).joinToString(" · "),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.appColors.textSecondary,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+                DateChip(report.createdAt)
             }
 
-            val title = report.animal.name?.takeIf { it.isNotBlank() }
-                ?: report.animal.species.replaceFirstChar { it.uppercase() }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = 12.dp),
-            )
             Text(
                 text = "Estado: ${report.status.displayName()}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.appColors.textSecondary,
-                modifier = Modifier.padding(top = 4.dp),
+                modifier = Modifier.padding(top = 8.dp),
             )
 
-            DetailSection("Descripción") {
-                Text(
-                    text = report.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+            SectionTitle("Descripción")
+            Text(
+                text = report.description,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            SectionTitle("Última vez visto")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.LocationOn,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
                 )
-            }
-
-            DetailSection("Animal") {
-                InfoRow("Especie", report.animal.species)
-                report.animal.breed?.let { InfoRow("Raza", it) }
-                report.animal.color?.let { InfoRow("Color", it) }
-                report.animal.name?.let { InfoRow("Nombre", it) }
-            }
-
-            DetailSection("Ubicación") {
-                // Lugar legible (ciudad, país). Las coordenadas solo se
-                // muestran como respaldo si el geocoder no resolvió aún o
-                // falló (p. ej. sin conexión): el usuario nunca queda sin
-                // dato, pero ve un nombre en cuanto está disponible.
+                Spacer(Modifier.size(6.dp))
                 Text(
                     text = address ?: "%.5f, %.5f".format(
                         report.location.latitude,
                         report.location.longitude,
                     ),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+            }
+            LocationSnippet(
+                lat = report.location.latitude,
+                lng = report.location.longitude,
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .clip(MaterialTheme.shapes.large),
+            )
+
+            // Autor + contacto. El modelo solo guarda ownerId: sin datos de
+            // contacto, "Contactar" se muestra deshabilitado.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "?",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                Spacer(Modifier.size(12.dp))
+                Text(
+                    text = "Autor del reporte",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                Box(modifier = Modifier.comingSoon()) {
+                    SecondaryButton(
+                        text = "Contactar",
+                        onClick = {},
+                        leadingIcon = Icons.Filled.Phone,
+                        modifier = Modifier.size(width = 140.dp, height = 48.dp),
+                    )
+                }
+            }
+
+            // "Tengo información" no tiene lógica de enlace: deshabilitado.
+            Box(modifier = Modifier
+                .padding(top = 16.dp)
+                .comingSoon()) {
+                PrimaryButton(text = "Tengo información", onClick = {})
             }
         }
     }
 }
 
 @Composable
-private fun DetailSection(title: String, content: @Composable () -> Unit) {
+private fun DateChip(createdAt: Long) {
+    Column(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.CalendarMonth,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = relativeTime(createdAt),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
+@Composable
+private fun LocationSnippet(lat: Double, lng: Double, modifier: Modifier = Modifier) {
+    val target = LatLng(lat, lng)
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(target, 15f)
+    }
+    GoogleMap(
+        modifier = modifier,
+        cameraPositionState = cameraPositionState,
+        googleMapOptionsFactory = { GoogleMapOptions().liteMode(true) },
+        uiSettings = MapUiSettings(
+            zoomControlsEnabled = false,
+            scrollGesturesEnabled = false,
+            zoomGesturesEnabled = false,
+        ),
+    ) {
+        Marker(state = rememberMarkerState(position = target))
+    }
+}
+
+@Composable
+private fun SectionTitle(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.onBackground,
         modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
     )
-    content()
-}
-
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.appColors.textSecondary,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
 }
 
 @Composable

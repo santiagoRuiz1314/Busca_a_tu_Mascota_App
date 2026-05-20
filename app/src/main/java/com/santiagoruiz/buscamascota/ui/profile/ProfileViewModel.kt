@@ -2,8 +2,10 @@ package com.santiagoruiz.buscamascota.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.santiagoruiz.buscamascota.domain.model.AuthState
 import com.santiagoruiz.buscamascota.domain.model.Report
 import com.santiagoruiz.buscamascota.domain.model.UserProfile
+import com.santiagoruiz.buscamascota.domain.usecase.auth.ObserveAuthStateUseCase
 import com.santiagoruiz.buscamascota.domain.usecase.auth.SignOutUseCase
 import com.santiagoruiz.buscamascota.domain.usecase.user.EncodeProfilePhotoUseCase
 import com.santiagoruiz.buscamascota.domain.usecase.user.EnsureUserProfileUseCase
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -26,11 +29,21 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     observeProfile: ObserveProfileUseCase,
     observeMyReports: ObserveMyReportsUseCase,
+    observeAuthState: ObserveAuthStateUseCase,
     private val ensureUserProfile: EnsureUserProfileUseCase,
     private val updateProfile: UpdateProfileUseCase,
     private val encodeProfilePhoto: EncodeProfilePhotoUseCase,
     private val signOutUseCase: SignOutUseCase,
 ) : ViewModel() {
+
+    /** `true` para invitado (anónimo o sin sesión): se muestra una invitación. */
+    val isGuest: StateFlow<Boolean> = observeAuthState()
+        .map { it !is AuthState.Authenticated || it.user.isAnonymous }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = true,
+        )
 
     val uiState: StateFlow<ProfileUiState> = observeProfile()
         .map<UserProfile, ProfileUiState> { ProfileUiState.Success(it) }
@@ -60,10 +73,16 @@ class ProfileViewModel @Inject constructor(
 
     init {
         // Crea el documento users/{uid} de forma perezosa la primera vez
-        // que se abre el perfil (cubre cuentas previas a la Fase 7 sin
-        // forzar reinicio de sesión). Idempotente; el error real, si lo
-        // hay, ya lo surfacing el flujo observado.
-        viewModelScope.launch { ensureUserProfile() }
+        // que entra una cuenta REAL (no anónima): cubre cuentas previas a la
+        // Fase 7 sin forzar reinicio de sesión y evita perfiles basura para
+        // invitados. Idempotente; el error real, si lo hay, ya lo surfacea
+        // el flujo observado.
+        viewModelScope.launch {
+            observeAuthState().first {
+                it is AuthState.Authenticated && !it.user.isAnonymous
+            }
+            ensureUserProfile()
+        }
     }
 
     /** Entra en modo edición copiando el perfil actual al formulario. */

@@ -20,5 +20,8 @@ interface AuthRepository {
 
     suspend fun signUp(name: String, email: String, password: String): Result<Unit>
 
+    /** Inicia una sesión anónima (modo invitado). */
+    suspend fun signInAnonymously(): Result<Unit>
+
     fun signOut()
 }

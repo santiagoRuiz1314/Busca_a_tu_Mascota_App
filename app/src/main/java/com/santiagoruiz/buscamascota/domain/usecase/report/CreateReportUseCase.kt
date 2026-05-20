@@ -32,8 +32,12 @@ class CreateReportUseCase @Inject constructor(
     private val authRepository: AuthRepository,
 ) {
     suspend operator fun invoke(input: CreateReportInput): Result<String> {
-        val ownerId = authRepository.currentUser?.uid
-            ?: return Result.failure(IllegalStateException("Debes iniciar sesión para reportar."))
+        // Un invitado anónimo SÍ tiene uid; exigir cuenta real para reportar.
+        val user = authRepository.currentUser
+        if (user == null || user.isAnonymous) {
+            return Result.failure(IllegalStateException("Debes iniciar sesión para reportar."))
+        }
+        val ownerId = user.uid
 
         if (input.species.isBlank()) {
             return Result.failure(IllegalArgumentException("Indica la especie del animal."))

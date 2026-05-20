@@ -21,6 +21,7 @@ fun NavGraphBuilder.authGraph(navController: NavController) {
                 onSignedIn = {
                     navController.navigate(MainGraphRoute) {
                         popUpTo(AuthGraphRoute) { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
                 onNavigateToSignUp = { navController.navigate(SignUpRoute) },
@@ -31,6 +32,7 @@ fun NavGraphBuilder.authGraph(navController: NavController) {
                 onSignedUp = {
                     navController.navigate(MainGraphRoute) {
                         popUpTo(AuthGraphRoute) { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
                 onBackToSignIn = { navController.popBackStack() },

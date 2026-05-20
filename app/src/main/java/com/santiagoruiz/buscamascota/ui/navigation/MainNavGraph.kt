@@ -20,6 +20,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +36,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.santiagoruiz.buscamascota.ui.alerts.AlertsScreen
+import com.santiagoruiz.buscamascota.ui.common.components.AuthPromptDialog
 import com.santiagoruiz.buscamascota.ui.detail.ReportDetailScreen
 import com.santiagoruiz.buscamascota.ui.feed.FeedScreen
 import com.santiagoruiz.buscamascota.ui.map.MapScreen
@@ -52,11 +56,19 @@ import com.santiagoruiz.buscamascota.ui.search.SearchScreen
  */
 @Composable
 fun MainScreen(
+    isGuest: Boolean,
+    onRequireAuth: (startWithSignUp: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val innerNav = rememberNavController()
     val backStackEntry by innerNav.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
+
+    var showAuthPrompt by remember { mutableStateOf(false) }
+    // Crear reporte exige cuenta real; el invitado ve primero el aviso.
+    val requestCreateReport = {
+        if (isGuest) showAuthPrompt = true else innerNav.navigate(CreateReportRoute)
+    }
 
     fun switchTab(route: Any) {
         innerNav.navigate(route) {
@@ -82,7 +94,7 @@ fun MainScreen(
                         } == true
                     },
                     onSelect = ::switchTab,
-                    onCreateReport = { innerNav.navigate(CreateReportRoute) },
+                    onCreateReport = requestCreateReport,
                 )
             }
         },
@@ -103,13 +115,14 @@ fun MainScreen(
                     onOpenReport = openReport,
                     onEditProfile = { innerNav.navigate(EditProfileRoute) },
                     onSeeAllReports = { innerNav.navigate(SearchRoute) },
+                    onRequireAuth = onRequireAuth,
                 )
             }
             composable<SearchRoute> {
                 SearchScreen(
                     onOpenMatches = { id -> innerNav.navigate(MatchesRoute(id)) },
                     onBack = { innerNav.popBackStack() },
-                    onReportSighting = { innerNav.navigate(CreateReportRoute) },
+                    onReportSighting = requestCreateReport,
                 )
             }
             composable<EditProfileRoute> {
@@ -128,6 +141,20 @@ fun MainScreen(
                 )
             }
         }
+    }
+
+    if (showAuthPrompt) {
+        AuthPromptDialog(
+            onDismiss = { showAuthPrompt = false },
+            onSignIn = {
+                showAuthPrompt = false
+                onRequireAuth(false)
+            },
+            onSignUp = {
+                showAuthPrompt = false
+                onRequireAuth(true)
+            },
+        )
     }
 }
 

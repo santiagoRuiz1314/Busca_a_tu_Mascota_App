@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
@@ -38,7 +39,9 @@ import com.santiagoruiz.buscamascota.domain.model.UserProfile
 import com.santiagoruiz.buscamascota.ui.common.ReportListUiState
 import com.santiagoruiz.buscamascota.ui.common.components.AppTopBar
 import com.santiagoruiz.buscamascota.ui.common.components.Base64Image
+import com.santiagoruiz.buscamascota.ui.common.components.PrimaryButton
 import com.santiagoruiz.buscamascota.ui.common.components.ReportCardCompact
+import com.santiagoruiz.buscamascota.ui.common.components.SecondaryButton
 import com.santiagoruiz.buscamascota.ui.common.components.SectionHeader
 import com.santiagoruiz.buscamascota.ui.common.components.StatCard
 import com.santiagoruiz.buscamascota.ui.theme.appColors
@@ -49,8 +52,19 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     onEditProfile: () -> Unit = {},
     onSeeAllReports: () -> Unit = {},
+    onRequireAuth: (startWithSignUp: Boolean) -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
+    val isGuest by viewModel.isGuest.collectAsState()
+    if (isGuest) {
+        ProfileGuestContent(
+            onSignIn = { onRequireAuth(false) },
+            onSignUp = { onRequireAuth(true) },
+            modifier = modifier,
+        )
+        return
+    }
+
     val state by viewModel.uiState.collectAsState()
     val myReports by viewModel.myReports.collectAsState()
 
@@ -231,6 +245,56 @@ private fun Avatar(photoBase64: String?, fallbackName: String) {
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
+    }
+}
+
+@Composable
+private fun ProfileGuestContent(
+    onSignIn: () -> Unit,
+    onSignUp: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.AccountCircle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(56.dp),
+            )
+        }
+        Text(
+            text = "Únete a la comunidad",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+        Text(
+            text = "Crea una cuenta para reportar mascotas perdidas, " +
+                "avistamientos y casos de maltrato, y gestionar tu perfil. " +
+                "Mientras tanto puedes seguir explorando los reportes.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.appColors.textSecondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Spacer(Modifier.size(24.dp))
+        PrimaryButton(text = "Registrarse", onClick = onSignUp)
+        Spacer(Modifier.size(12.dp))
+        SecondaryButton(text = "Iniciar sesión", onClick = onSignIn)
     }
 }
 

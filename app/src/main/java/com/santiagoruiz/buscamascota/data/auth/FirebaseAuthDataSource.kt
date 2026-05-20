@@ -49,11 +49,16 @@ class FirebaseAuthDataSource @Inject constructor(
         result.user?.updateProfile(profileUpdate)?.await()
     }
 
+    suspend fun signInAnonymously() {
+        firebaseAuth.signInAnonymously().await()
+    }
+
     fun signOut() = firebaseAuth.signOut()
 
     private fun FirebaseUser.toAuthUser() = AuthUser(
         uid = uid,
         email = email.orEmpty(),
         displayName = displayName.orEmpty(),
+        isAnonymous = isAnonymous,
     )
 }

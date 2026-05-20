@@ -38,6 +38,9 @@ class AuthRepositoryImpl @Inject constructor(
         password: String,
     ): Result<Unit> = runAuth { dataSource.signUp(name, email, password) }
 
+    override suspend fun signInAnonymously(): Result<Unit> =
+        runAuth { dataSource.signInAnonymously() }
+
     override fun signOut() = dataSource.signOut()
 
     private suspend inline fun runAuth(crossinline block: suspend () -> Unit): Result<Unit> =

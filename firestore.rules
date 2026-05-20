@@ -2,41 +2,53 @@ rules_version = '2';
 
 // Reglas de seguridad de Cloud Firestore para BuscaMascota.
 //
-// La base se creó en modo producción (deniega todo por defecto). Estas
-// reglas son las definitivas de la Fase 7 (perfil + endurecer seguridad):
-// lectura solo autenticada; escritura solo por el dueño / propio uid; no se
-// puede reasignar la propiedad de un reporte ni borrar perfiles.
+// La base se creó en modo producción (deniega todo por defecto). Modo
+// invitado: la app inicia sesión ANÓNIMA cuando no hay cuenta, así el
+// invitado puede LEER reportes (request.auth != null se cumple) pero NO
+// escribir. Crear/editar/borrar reportes y perfiles exige una cuenta REAL
+// (no anónima): isRealUser().
 //
 // CÓMO PUBLICARLAS: Firebase Console → proyecto buscamascota-a15a6 →
 // Build → Firestore Database → pestaña "Rules" → pegar este contenido →
 // "Publish". (No hay Firebase CLI configurado en el repo.)
+//
+// PREREQUISITO: habilitar el proveedor "Anónimo" en Authentication →
+// Sign-in method, o el modo invitado cae al login (fallback en la app).
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Reportes: cualquier usuario autenticado puede leerlos; solo el dueño
-    // puede crear (con su propio uid), modificar y borrar los suyos. En las
-    // actualizaciones no se permite reasignar el dueño (ownerId inmutable).
+    // Cuenta real = autenticada y NO anónima (los invitados son anónimos).
+    function isRealUser() {
+      return request.auth != null
+          && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    // Reportes: cualquier sesión (incluido invitado anónimo) puede leerlos;
+    // solo una cuenta real puede crear (con su propio uid), modificar y
+    // borrar los suyos. En las actualizaciones no se permite reasignar el
+    // dueño (ownerId inmutable).
     match /reports/{reportId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null
+      allow create: if isRealUser()
                     && request.resource.data.ownerId == request.auth.uid;
-      allow update: if request.auth != null
+      allow update: if isRealUser()
                     && resource.data.ownerId == request.auth.uid
                     && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if request.auth != null
+      allow delete: if isRealUser()
                     && resource.data.ownerId == request.auth.uid;
     }
 
-    // Perfil de usuario (users/{uid}): lectura autenticada; cada quien crea
-    // y edita únicamente el documento cuyo id es su propio uid. El perfil no
-    // se borra desde la app (se conserva la autoría histórica de los
-    // reportes). No se valida el campo `uid` del documento porque es
-    // @DocumentId: Firestore lo deriva de la ruta y NO lo escribe en data.
+    // Perfil de usuario (users/{uid}): lectura para cualquier sesión; cada
+    // cuenta real crea y edita únicamente el documento cuyo id es su propio
+    // uid (los invitados anónimos no tienen perfil). El perfil no se borra
+    // desde la app (se conserva la autoría histórica de los reportes). No se
+    // valida el campo `uid` del documento porque es @DocumentId: Firestore
+    // lo deriva de la ruta y NO lo escribe en data.
     match /users/{uid} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == uid;
-      allow update: if request.auth != null && request.auth.uid == uid;
+      allow create: if isRealUser() && request.auth.uid == uid;
+      allow update: if isRealUser() && request.auth.uid == uid;
       allow delete: if false;
     }
   }

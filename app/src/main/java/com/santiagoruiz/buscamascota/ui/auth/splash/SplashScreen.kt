@@ -14,38 +14,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 
 /**
- * Pantalla de bienvenida: fondo índigo de marca, logo de pata y nombre.
- * Decide el destino inicial según el estado de sesión observado en Firebase.
+ * Pantalla de bienvenida puramente visual: fondo índigo de marca, logo de
+ * pata y nombre. La decisión de a dónde derivar la toma el grafo raíz
+ * ([com.santiagoruiz.buscamascota.ui.navigation.AppNavGraph]) según el
+ * estado del [com.santiagoruiz.buscamascota.ui.session.SessionViewModel].
  */
 @Composable
-fun SplashScreen(
-    onAuthenticated: () -> Unit,
-    onUnauthenticated: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: SplashViewModel = hiltViewModel(),
-) {
-    val state by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(state) {
-        when (state) {
-            SplashUiState.Authenticated -> onAuthenticated()
-            SplashUiState.Unauthenticated -> onUnauthenticated()
-            SplashUiState.Loading -> Unit
-        }
-    }
-
+fun SplashScreen(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()

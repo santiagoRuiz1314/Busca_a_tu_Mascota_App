@@ -8,4 +8,9 @@ data class AuthUser(
     val uid: String,
     val email: String,
     val displayName: String,
+    /**
+     * `true` si la sesión es anónima (modo invitado: ve reportes pero no
+     * puede crearlos hasta registrarse).
+     */
+    val isAnonymous: Boolean = false,
 )

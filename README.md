@@ -90,7 +90,7 @@ app/src/main/java/com/santiagoruiz/buscamascota/
 
 ---
 
-## 🤖 Pipeline de IA on-device
+## Pipeline de IA on-device
 
 Todo el procesamiento corre en el dispositivo para mantenerse en el plan
 gratuito de Firebase (sin Vertex AI ni Vector Search):

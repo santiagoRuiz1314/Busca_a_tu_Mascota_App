@@ -12,7 +12,7 @@ a recuperar a sus mascotas.
 
 ---
 
-## 📋 Tabla de contenido
+## Tabla de contenido
 
 - [Funcionalidades](#-funcionalidades)
 - [Tech stack](#-tech-stack)
@@ -28,7 +28,7 @@ a recuperar a sus mascotas.
 
 ---
 
-## ✨ Funcionalidades
+## Funcionalidades
 
 - **Autenticación con Firebase Auth** (email/contraseña) y **modo invitado**
   (sesión anónima) para explorar la app sin registrarse. La cuenta real solo
@@ -50,7 +50,7 @@ a recuperar a sus mascotas.
 
 ---
 
-## 🛠 Tech stack
+## Tech stack
 
 | Capa | Tecnología |
 |---|---|
@@ -70,7 +70,7 @@ a recuperar a sus mascotas.
 
 ---
 
-## 🏗 Arquitectura
+## Arquitectura
 
 Clean Architecture ligera en tres capas:
 
@@ -109,7 +109,7 @@ gratuito de Firebase (sin Vertex AI ni Vector Search):
 
 ---
 
-## 📦 Modelo de datos
+## Modelo de datos
 
 **Cloud Firestore** (no Realtime Database):
 
@@ -137,7 +137,7 @@ reports: status (ASC) + createdAt (DESC)
 
 ---
 
-## 🚀 Cómo correr el proyecto
+## Cómo correr el proyecto
 
 ### Requisitos
 
@@ -192,15 +192,15 @@ está en `.gitignore` por ser binario pesado). Tensor de salida esperado:
 ./gradlew assembleDebug
 ```
 
-O simplemente ▶️ desde Android Studio. Probado en emulador
+O simplemente desde Android Studio. Probado en emulador
 `Pixel 6 API 34` y dispositivo físico.
 
-> ⚠️ **Tip de emulador:** la prioridad `BALANCED` de FusedLocation devuelve
+> **Tip de emulador:** la prioridad `BALANCED` de FusedLocation devuelve
 > `null` en el emulador — la app usa `HIGH_ACCURACY` por defecto.
 
 ---
 
-## 📁 Estructura del proyecto
+## Estructura del proyecto
 
 ```
 BuscaMascota/
@@ -242,7 +242,7 @@ BuscaMascota/
 
 ---
 
-## 📅 Estado de desarrollo
+## Estado de desarrollo
 
 El proyecto se construyó por **fases incrementales** (walking skeleton +
 vertical slices). Todas las fases planeadas están terminadas:
@@ -259,7 +259,7 @@ vertical slices). Todas las fases planeadas están terminadas:
 
 ---
 
-## 🎨 Decisiones de diseño
+## Decisiones de diseño
 
 - **Diseño visual:** tema **Stitch — Premium Indigo / Community Pet
   Rescue**. Los tokens (colores, tipografía, spacing, shapes) se mapearon
@@ -279,7 +279,7 @@ vertical slices). Todas las fases planeadas están terminadas:
 
 ---
 
-## 📐 Convenciones
+## Convenciones
 
 - Identificadores en código (clases, funciones, variables, paquetes) en
   **inglés**.
@@ -292,7 +292,7 @@ vertical slices). Todas las fases planeadas están terminadas:
 
 ---
 
-## 👤 Autor
+## Autor
 
 **Santiago Ruiz** — Estudiante de Ingeniería de Sistemas, UNAB.
 🐙 [@santiagoRuiz1314](https://github.com/santiagoRuiz1314)

@@ -295,12 +295,10 @@ vertical slices). Todas las fases planeadas están terminadas:
 ## 👤 Autor
 
 **Santiago Ruiz** — Estudiante de Ingeniería de Sistemas, UNAB.
-📧 davidl.ruizc@gmail.com
 🐙 [@santiagoRuiz1314](https://github.com/santiagoRuiz1314)
 
 ---
 
 ## 📄 Licencia
 
-Proyecto académico sin licencia formal. Si quieres reutilizar parte del
-código, escríbeme.
+Proyecto académico 
